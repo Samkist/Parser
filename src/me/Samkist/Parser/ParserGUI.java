@@ -24,7 +24,7 @@ public class ParserGUI extends GBFrame {
 
     public void buttonClicked(JButton jButton) {
         if(jButton.equals(inputButton)) {
-
+            new Parser(inputField.getText(), this);
             inputField.grabFocus();
         }
         if(jButton.equals(resetButton)) {
