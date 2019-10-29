@@ -1,5 +1,6 @@
 package me.Samkist.Parser;
 
+
 import me.Samkist.Parser.CustomExceptions.IllegalCharacterException;
 import me.Samkist.Parser.CustomExceptions.IllegalStartException;
 import me.Samkist.Parser.CustomExceptions.IllegalTermAmountException;
@@ -10,8 +11,10 @@ public class Parser {
     private double[] numbers;
     private char operator;
     private double result;
+    private int operatorIndex = 0;
 
     public Parser(String rawString, ParserGUI gui) {
+        rawString = rawString.replaceAll("\\s+", "");
         this.rawString = rawString;
         this.gui = gui;
         try {
@@ -24,8 +27,8 @@ public class Parser {
             gui.messageBox(e.getMessage());
             return;
         }
-        numbers = findNumbers();
         operator = determineOperator();
+        numbers = findNumbers();
         try {
             result = calculateExpression(numbers, operator);
         } catch(ArithmeticException e) {
@@ -42,7 +45,7 @@ public class Parser {
             throw new IllegalStartException("The first character of the string must be a \"=\"");
         }
         for(int i = 0; i < splitCheckString.length; i++) {
-            if(!(Character.isDigit(rawString.charAt(i)) || splitCheckString[i].matches("[-+*/%=]"))) {
+            if(!(Character.isDigit(rawString.charAt(i)) || splitCheckString[i].matches("[-+*/%=.]"))) {
                 throw new IllegalCharacterException("Illegal character \'" + splitCheckString[i] + "\' at index: " + i);
             }
         }
@@ -53,21 +56,29 @@ public class Parser {
 
     private double[] findNumbers() {
         double[] nums = new double[2];
-        String[] splitStringRaw = rawString.split("[+*/%=]");
+        StringBuilder string = new StringBuilder((CharSequence) rawString);
+        string.setCharAt(operatorIndex, ' ');
+        string.deleteCharAt(0);
+        String a = string.toString();
+        String[] numbers = a.split("\\s+");
+        for(int i = 0; i < nums.length; i++) {
+            nums[i] = Double.parseDouble(numbers[i]);
+        }
+        return nums;
+    }
+
+    private double findNegative(int startIndex) {
+        String negativeString = "-";
         String[] splitCheckString = rawString.split("");
-        boolean negatives = false;
-        for(String s : splitCheckString) {
-            if(s.equals("-")) {
-                negatives = true;
+        for(int i = startIndex+1; i < splitCheckString.length - startIndex + 1; i++) {
+            if(Character.isDigit(rawString.charAt(i))) {
+                negativeString += splitCheckString[i];
+            } else {
                 break;
             }
         }
-        if(!(negatives)) {
-            for(int i = 0; i < nums.length; i++) {
-                    nums[i] = Double.parseDouble(splitStringRaw[i+1]);
-            }
-        }
-        return nums;
+        System.out.println(negativeString);
+        return Double.parseDouble(negativeString);
     }
 
     private char determineOperator() {
@@ -75,16 +86,20 @@ public class Parser {
         for(int i = 0; i < splitCheckString.length; i++) {
             switch (splitCheckString[i]) {
                 case "-":
-                    if(Character.isDigit(rawString.charAt(i-1))) {
+                    if(Character.isDigit(rawString.charAt(i-1)) && Character.isDigit(rawString.charAt(i+1))) {
+                        operatorIndex = i;
                         return '-';
                     } else {
                         continue;
                     }
                 case "+":
+                    operatorIndex = i;
                     return '+';
                 case "*":
+                    operatorIndex = i;
                     return '*';
                 case "/":
+                    operatorIndex = i;
                     return '/';
             }
         }
