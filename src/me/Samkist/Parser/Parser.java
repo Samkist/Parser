@@ -28,7 +28,6 @@ public class Parser {
             return;
         }
         operator = determineOperator();
-        numbers = findNumbers();
         try {
             result = calculateExpression(numbers, operator);
         } catch(ArithmeticException e) {
@@ -49,36 +48,24 @@ public class Parser {
                 throw new IllegalCharacterException("Illegal character \'" + splitCheckString[i] + "\' at index: " + i);
             }
         }
-        if(false) {
-            throw new IllegalTermAmountException("Illegal amount of terms, please keep the amount of terms at 2");
-        }
+       numbers = findNumbers();
     }
 
-    private double[] findNumbers() {
+    private double[] findNumbers() throws IllegalTermAmountException {
         double[] nums = new double[2];
         StringBuilder string = new StringBuilder((CharSequence) rawString);
         string.setCharAt(operatorIndex, ' ');
         string.deleteCharAt(0);
         String a = string.toString();
         String[] numbers = a.split("\\s+");
-        for(int i = 0; i < nums.length; i++) {
-            nums[i] = Double.parseDouble(numbers[i]);
+        try {
+            for (int i = 0; i < nums.length; i++) {
+                nums[i] = Double.parseDouble(numbers[i]);
+            }
+        } catch (NumberFormatException e) {
+            throw new IllegalTermAmountException("There was an incorrect amount of terms included in the expression, please try again.");
         }
         return nums;
-    }
-
-    private double findNegative(int startIndex) {
-        String negativeString = "-";
-        String[] splitCheckString = rawString.split("");
-        for(int i = startIndex+1; i < splitCheckString.length - startIndex + 1; i++) {
-            if(Character.isDigit(rawString.charAt(i))) {
-                negativeString += splitCheckString[i];
-            } else {
-                break;
-            }
-        }
-        System.out.println(negativeString);
-        return Double.parseDouble(negativeString);
     }
 
     private char determineOperator() {
