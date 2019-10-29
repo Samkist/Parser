@@ -23,12 +23,17 @@ public class Parser {
           gui.getOutputField().setText(rawString);
           gui.messageBox(e.getMessage());
           return;
-        } catch (IllegalCharacterException | IllegalTermAmountException e) {
+        } catch (IllegalCharacterException e) {
             gui.messageBox(e.getMessage());
             return;
         }
         operator = determineOperator();
-        numbers = findNumbers();
+        try {
+            numbers = findNumbers();
+        } catch (IllegalTermAmountException e) {
+            gui.messageBox(e.getMessage());
+            return;
+        }
         try {
             result = calculateExpression(numbers, operator);
         } catch(ArithmeticException e) {
@@ -38,7 +43,7 @@ public class Parser {
         gui.getOutputField().setText("" + result);
     }
 
-    private void errorCheck() throws IllegalStartException, IllegalCharacterException, IllegalTermAmountException {
+    private void errorCheck() throws IllegalStartException, IllegalCharacterException {
         String[] splitCheckString = rawString.split("");
         String[] splitStringWNegatives = rawString.split("[+*/%=]");
         if(!splitCheckString[0].equals("=")) {
@@ -49,12 +54,9 @@ public class Parser {
                 throw new IllegalCharacterException("Illegal character \'" + splitCheckString[i] + "\' at index: " + i);
             }
         }
-        if(false) {
-            throw new IllegalTermAmountException("Illegal amount of terms, please keep the amount of terms at 2");
-        }
     }
 
-    private double[] findNumbers() {
+    private double[] findNumbers() throws IllegalTermAmountException {
         double[] nums = new double[2];
         StringBuilder string = new StringBuilder((CharSequence) rawString);
         string.setCharAt(operatorIndex, ' ');
@@ -62,23 +64,13 @@ public class Parser {
         String a = string.toString();
         String[] numbers = a.split("\\s+");
         for(int i = 0; i < nums.length; i++) {
-            nums[i] = Double.parseDouble(numbers[i]);
-        }
-        return nums;
-    }
-
-    private double findNegative(int startIndex) {
-        String negativeString = "-";
-        String[] splitCheckString = rawString.split("");
-        for(int i = startIndex+1; i < splitCheckString.length - startIndex + 1; i++) {
-            if(Character.isDigit(rawString.charAt(i))) {
-                negativeString += splitCheckString[i];
-            } else {
-                break;
+            try {
+                nums[i] = Double.parseDouble(numbers[i]);
+            } catch (NumberFormatException | ArrayIndexOutOfBoundsException e ) {
+                throw new IllegalTermAmountException("Bad amount terms");
             }
         }
-        System.out.println(negativeString);
-        return Double.parseDouble(negativeString);
+        return nums;
     }
 
     private char determineOperator() {
