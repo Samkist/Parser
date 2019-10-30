@@ -45,7 +45,6 @@ public class Parser {
 
     private void errorCheck() throws IllegalStartException, IllegalCharacterException {
         String[] splitCheckString = rawString.split("");
-        String[] splitStringWNegatives = rawString.split("[+*/%=]");
         if(!splitCheckString[0].equals("=")) {
             throw new IllegalStartException("The first character of the string must be a \"=\"");
         }
@@ -58,13 +57,25 @@ public class Parser {
 
     private double[] findNumbers() throws IllegalTermAmountException {
         double[] nums = new double[2];
+        String[] splitCheckString = rawString.split("");
         StringBuilder string = new StringBuilder((CharSequence) rawString);
         string.setCharAt(operatorIndex, ' ');
         string.deleteCharAt(0);
+        for(int i = 0; i < splitCheckString.length; i++) {
+            if(splitCheckString[i].equals("-")) {
+                if(rawString.charAt(i+1) == '-') {
+                    operator = '+';
+                    string.replace(i-1, i+1, " ");
+                    break;
+                }
+            }
+        }
         String a = string.toString();
+        System.out.println(a);
         String[] numbers = a.split("\\s+");
         for(int i = 0; i < nums.length; i++) {
             try {
+                System.out.println("Trying: " + numbers[i]);
                 nums[i] = Double.parseDouble(numbers[i]);
             } catch (NumberFormatException | ArrayIndexOutOfBoundsException e ) {
                 throw new IllegalTermAmountException("Bad amount terms");
