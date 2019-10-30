@@ -78,7 +78,7 @@ public class Parser {
                 System.out.println("Trying: " + numbers[i]);
                 nums[i] = Double.parseDouble(numbers[i]);
             } catch (NumberFormatException | ArrayIndexOutOfBoundsException e ) {
-                throw new IllegalTermAmountException("Bad amount terms");
+                throw new IllegalTermAmountException("Bad amount of terms or too many operators");
             }
         }
         return nums;
