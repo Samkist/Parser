@@ -4,6 +4,9 @@ package me.Samkist.Parser;
 import me.Samkist.Parser.CustomExceptions.IllegalCharacterException;
 import me.Samkist.Parser.CustomExceptions.IllegalStartException;
 import me.Samkist.Parser.CustomExceptions.IllegalTermAmountException;
+import me.Samkist.Parser.CustomExceptions.MisplacedOperatorException;
+
+import java.util.ArrayList;
 
 public class Parser {
     private String rawString;
@@ -55,12 +58,14 @@ public class Parser {
         }
     }
 
-    private double[] findNumbers() throws IllegalTermAmountException {
+    private double[] findNumbers() throws IllegalTermAmountException, MisplacedOperatorException {
         double[] nums = new double[2];
         String[] splitCheckString = rawString.split("");
         StringBuilder string = new StringBuilder((CharSequence) rawString);
         string.setCharAt(operatorIndex, ' ');
         string.deleteCharAt(0);
+        String end = splitCheckString[splitCheckString.length-1];
+        char a = end.charAt(0);
         for(int i = 0; i < splitCheckString.length; i++) {
             if(splitCheckString[i].equals("-")) {
                 if(rawString.charAt(i+1) == '-') {
@@ -70,8 +75,6 @@ public class Parser {
                 }
             }
         }
-        String a = string.toString();
-        System.out.println(a);
         String[] numbers = a.split("\\s+");
         for(int i = 0; i < nums.length; i++) {
             try {
@@ -89,11 +92,20 @@ public class Parser {
         for(int i = 0; i < splitCheckString.length; i++) {
             switch (splitCheckString[i]) {
                 case "-":
-                    if(Character.isDigit(rawString.charAt(i-1)) && Character.isDigit(rawString.charAt(i+1))) {
-                        operatorIndex = i;
-                        return '-';
+                    if(!(i+1 == rawString.length())) {
+                        if (Character.isDigit(rawString.charAt(i - 1)) && Character.isDigit(rawString.charAt(i + 1))) {
+                            operatorIndex = i;
+                            return '-';
+                        } else {
+                            continue;
+                        }
                     } else {
-                        continue;
+                        if (Character.isDigit(rawString.charAt(i - 1))) {
+                            operatorIndex = i;
+                            return '-';
+                        } else {
+                            continue;
+                        }
                     }
                 case "+":
                     operatorIndex = i;
