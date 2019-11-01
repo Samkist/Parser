@@ -33,7 +33,7 @@ public class Parser {
         operator = determineOperator();
         try {
             numbers = findNumbers();
-        } catch (IllegalTermAmountException e) {
+        } catch (IllegalTermAmountException | MisplacedOperatorException e) {
             gui.messageBox(e.getMessage());
             return;
         }
@@ -65,7 +65,8 @@ public class Parser {
         string.setCharAt(operatorIndex, ' ');
         string.deleteCharAt(0);
         String end = splitCheckString[splitCheckString.length-1];
-        char a = end.charAt(0);
+        char z = end.charAt(0);
+        if(!Character.isDigit(z)) throw new MisplacedOperatorException("Misplaced operator, last character " + z + " must be an operand");
         for(int i = 0; i < splitCheckString.length; i++) {
             if(splitCheckString[i].equals("-")) {
                 if(rawString.charAt(i+1) == '-') {
@@ -75,6 +76,7 @@ public class Parser {
                 }
             }
         }
+        String a = string.toString();
         String[] numbers = a.split("\\s+");
         for(int i = 0; i < nums.length; i++) {
             try {
