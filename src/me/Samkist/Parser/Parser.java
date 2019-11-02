@@ -1,25 +1,22 @@
 package me.Samkist.Parser;
 
 
-import me.Samkist.Parser.CustomExceptions.IllegalCharacterException;
-import me.Samkist.Parser.CustomExceptions.IllegalStartException;
-import me.Samkist.Parser.CustomExceptions.IllegalTermAmountException;
-import me.Samkist.Parser.CustomExceptions.MisplacedOperatorException;
+import me.Samkist.Parser.CustomExceptions.*;
 
 import java.util.ArrayList;
+import java.util.Stack;
 
 public class Parser {
-    private String rawString;
-    private ParserGUI gui;
-    private double[] numbers;
-    private char operator;
-    private double result;
-    private int operatorIndex = 0;
+    Stack<Double> operands = new Stack<>();
+    Stack<Character> operators = new Stack<>();
+    String[] stringTokens;
+    String rawString;
+    ParserGUI gui;
 
     public Parser(String rawString, ParserGUI gui) {
-        rawString = rawString.replaceAll("\\s+", "");
         this.rawString = rawString;
         this.gui = gui;
+        stringTokens = rawString.split("");
         try {
             errorCheck();
         } catch (IllegalStartException e) {
@@ -30,20 +27,56 @@ public class Parser {
             gui.messageBox(e.getMessage());
             return;
         }
-        operator = determineOperator();
-        try {
-            numbers = findNumbers();
-        } catch (IllegalTermAmountException | MisplacedOperatorException e) {
-            gui.messageBox(e.getMessage());
-            return;
+    }
+
+    private double evaluateExpression() throws IntegerParseException {
+        for(int i = 0; i < stringTokens.length; i++) {
+            if (stringTokens[i].equals(" "))
+                continue;
+            if (Character.isDigit(stringTokens[i].charAt(0))) {
+                StringBuilder stringBuilder;
+                if (stringTokens[i - 1].equals("-")) {
+                    stringBuilder = new StringBuilder(stringTokens[i - 1]);
+                } else {
+                    stringBuilder = new StringBuilder(stringTokens[i]);
+                }
+                while (i < stringTokens.length && Character.isDigit(stringTokens[i].charAt(0)))
+                    stringBuilder.append(stringTokens[i++]);
+                try {
+                    operands.push(Double.parseDouble(stringBuilder.toString()));
+                } catch (Exception e) {
+                    throw new IntegerParseException("Failed to parse " + stringBuilder.toString() + " to an expression");
+                }
+            }
+            else if (stringTokens[i].equals("("))
+                operators.push(stringTokens[i].charAt(0));
+            else if (stringTokens[i].equals(")")) {
+                while(operators.peek() != '(') {
+                    operands.push(applyOperator(operands.pop(), operators.pop(), operands.pop()));
+                }
+                operators.pop();
+            }
+            else if(stringTokens.equals("+") ||
+                    stringTokens.equals("/") ||
+                    stringTokens.equals("*")) {
+                while(!operators.isEmpty() && hasPrecedence(stringTokens[i].charAt(0), operators.peek()))
+                    operands.push(applyOperator(operands.pop(), operators.pop(), operands.pop()));
+                operators.push(stringTokens[i].charAt(0));
+            }
+            else if(stringTokens.equals("-")) {
+            }
+
         }
-        try {
-            result = calculateExpression(numbers, operator);
-        } catch(ArithmeticException e) {
-            gui.messageBox(e.getMessage());
-            return;
-        }
-        gui.getOutputField().setText("" + result);
+        return 0.0;
+    }
+
+    private boolean hasPrecedence(char op1, char op2) {
+        if(op2 == ')' || op2 == '(')
+            return false;
+        else if((op1 == '*' || op1 == '/') && (op2 == '+' || op2 == '-'))
+            return false;
+        else
+            return true;
     }
 
     private void errorCheck() throws IllegalStartException, IllegalCharacterException {
@@ -52,89 +85,24 @@ public class Parser {
             throw new IllegalStartException("The first character of the string must be a \"=\"");
         }
         for(int i = 0; i < splitCheckString.length; i++) {
-            if(!(Character.isDigit(rawString.charAt(i)) || splitCheckString[i].matches("[-+*/%=.]"))) {
+            if(!(Character.isDigit(rawString.charAt(i)) || splitCheckString[i].matches("[-+*/=]"))) {
                 throw new IllegalCharacterException("Illegal character \'" + splitCheckString[i] + "\' at index: " + i);
             }
         }
     }
 
-    private double[] findNumbers() throws IllegalTermAmountException, MisplacedOperatorException {
-        double[] nums = new double[2];
-        String[] splitCheckString = rawString.split("");
-        StringBuilder string = new StringBuilder((CharSequence) rawString);
-        string.setCharAt(operatorIndex, ' ');
-        string.deleteCharAt(0);
-        String end = splitCheckString[splitCheckString.length-1];
-        char z = end.charAt(0);
-        if(!Character.isDigit(z)) throw new MisplacedOperatorException("Misplaced operator, last character " + z + " must be an operand");
-        for(int i = 0; i < splitCheckString.length; i++) {
-            if(splitCheckString[i].equals("-")) {
-                if(rawString.charAt(i+1) == '-') {
-                    operator = '+';
-                    string.replace(i-1, i+1, " ");
-                    break;
-                }
-            }
-        }
-        String a = string.toString();
-        String[] numbers = a.split("\\s+");
-        for(int i = 0; i < nums.length; i++) {
-            try {
-                System.out.println("Trying: " + numbers[i]);
-                nums[i] = Double.parseDouble(numbers[i]);
-            } catch (NumberFormatException | ArrayIndexOutOfBoundsException e ) {
-                throw new IllegalTermAmountException("Bad amount of terms or too many operators");
-            }
-        }
-        return nums;
-    }
-
-    private char determineOperator() {
-        String[] splitCheckString = rawString.split("");
-        for(int i = 0; i < splitCheckString.length; i++) {
-            switch (splitCheckString[i]) {
-                case "-":
-                    if(!(i+1 == rawString.length())) {
-                        if (Character.isDigit(rawString.charAt(i - 1)) && Character.isDigit(rawString.charAt(i + 1))) {
-                            operatorIndex = i;
-                            return '-';
-                        } else {
-                            continue;
-                        }
-                    } else {
-                        if (Character.isDigit(rawString.charAt(i - 1))) {
-                            operatorIndex = i;
-                            return '-';
-                        } else {
-                            continue;
-                        }
-                    }
-                case "+":
-                    operatorIndex = i;
-                    return '+';
-                case "*":
-                    operatorIndex = i;
-                    return '*';
-                case "/":
-                    operatorIndex = i;
-                    return '/';
-            }
-        }
-        return '+';
-    }
-
-    private double calculateExpression(double[] nums, char op) throws ArithmeticException {
+    private double applyOperator(double a, char op, double b) throws ArithmeticException {
         switch(op) {
             case '-':
-                return nums[0] - nums[1];
+                return a - b;
             case '*':
-                return nums[0] * nums[1];
+                return a * b;
             case '/':
-                if(nums[1] == 0)
+                if(b == 0)
                     throw new ArithmeticException("Attempt to divide by zero, please remove 0 and please try again");
-                return nums[0] / nums[1];
+                return a / b;
             default:
-                return nums[0] + nums[1];
+                return a + b;
         }
     }
 }
