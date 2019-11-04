@@ -7,8 +7,8 @@ import java.util.ArrayList;
 import java.util.Stack;
 
 public class Parser {
-    Stack<Double> operands = new Stack<>();
-    Stack<Character> operators = new Stack<>();
+    Stack<Double> nums = new Stack<>();
+    Stack<String> ops = new Stack<>();
     String[] stringTokens;
     String rawString;
     ParserGUI gui;
@@ -27,56 +27,50 @@ public class Parser {
             gui.messageBox(e.getMessage());
             return;
         }
+        findNumbers();
+        findOperators();
     }
 
-    private double evaluateExpression() throws IntegerParseException {
-        for(int i = 0; i < stringTokens.length; i++) {
-            if (stringTokens[i].equals(" "))
-                continue;
-            if (Character.isDigit(stringTokens[i].charAt(0))) {
-                StringBuilder stringBuilder;
-                if (stringTokens[i - 1].equals("-")) {
-                    stringBuilder = new StringBuilder(stringTokens[i - 1]);
-                } else {
-                    stringBuilder = new StringBuilder(stringTokens[i]);
-                }
-                while (i < stringTokens.length && Character.isDigit(stringTokens[i].charAt(0)))
-                    stringBuilder.append(stringTokens[i++]);
-                try {
-                    operands.push(Double.parseDouble(stringBuilder.toString()));
-                } catch (Exception e) {
-                    throw new IntegerParseException("Failed to parse " + stringBuilder.toString() + " to an expression");
-                }
-            }
-            else if (stringTokens[i].equals("("))
-                operators.push(stringTokens[i].charAt(0));
-            else if (stringTokens[i].equals(")")) {
-                while(operators.peek() != '(') {
-                    operands.push(applyOperator(operands.pop(), operators.pop(), operands.pop()));
-                }
-                operators.pop();
-            }
-            else if(stringTokens.equals("+") ||
-                    stringTokens.equals("/") ||
-                    stringTokens.equals("*")) {
-                while(!operators.isEmpty() && hasPrecedence(stringTokens[i].charAt(0), operators.peek()))
-                    operands.push(applyOperator(operands.pop(), operators.pop(), operands.pop()));
-                operators.push(stringTokens[i].charAt(0));
-            }
-            else if(stringTokens.equals("-")) {
-            }
-
-        }
+    private double evaluateExpression() {
+        
         return 0.0;
     }
 
-    private boolean hasPrecedence(char op1, char op2) {
-        if(op2 == ')' || op2 == '(')
-            return false;
-        else if((op1 == '*' || op1 == '/') && (op2 == '+' || op2 == '-'))
-            return false;
-        else
-            return true;
+    private void findNumbers() {
+        SamArray<String> s = new SamArray<>();
+        for(int i = 1; i < stringTokens.length; i++) {
+            if(Character.isDigit(stringTokens[i].charAt(0))) {
+                StringBuilder stringBuilder;
+                if(stringTokens[i-1].equals("-")) {
+                    stringBuilder = new StringBuilder("-");
+                } else {
+                    stringBuilder = new StringBuilder();
+                }
+                while(i < stringTokens.length && (Character.isDigit(stringTokens[i].charAt(0)) || stringTokens[i].equals("."))) {
+                    stringBuilder.append(stringTokens[i]);
+                    i++;
+                }
+                s.add(stringBuilder.toString());
+            }
+        }
+        for(String st : s) {
+            nums.push(Double.parseDouble(st));
+        }
+        System.out.println("Numbers: ");
+        nums.forEach(System.out::println);
+    }
+
+    private void findOperators() {
+        for(int i = 0; i < stringTokens.length; i++) {
+            if(stringTokens[i].matches("[+*/()]")) {
+                ops.push(stringTokens[i]);
+            } else if(stringTokens[i].equals("-")) {
+                if(!(Character.isDigit(stringTokens[i + 1].charAt(0))))
+                    ops.push(stringTokens[i]);
+            }
+        }
+        System.out.println("Operators: ");
+        ops.forEach(System.out::println);
     }
 
     private void errorCheck() throws IllegalStartException, IllegalCharacterException {
@@ -85,10 +79,16 @@ public class Parser {
             throw new IllegalStartException("The first character of the string must be a \"=\"");
         }
         for(int i = 0; i < splitCheckString.length; i++) {
-            if(!(Character.isDigit(rawString.charAt(i)) || splitCheckString[i].matches("[-+*/=]"))) {
-                throw new IllegalCharacterException("Illegal character \'" + splitCheckString[i] + "\' at index: " + i);
+            if(!(Character.isDigit(rawString.charAt(i)) || splitCheckString[i].matches("[-+*/=()]"))) {
+                //throw new IllegalCharacterException("Illegal character \'" + splitCheckString[i] + "\' at index: " + i);
             }
         }
+    }
+
+    private boolean hasPrecedence(String op1, String op2) {
+        if(op2.matches("[()]"))
+            return false;
+        return !op2.matches("[*/]") || !op1.matches("[-+]");
     }
 
     private double applyOperator(double a, char op, double b) throws ArithmeticException {
