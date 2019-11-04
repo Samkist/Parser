@@ -90,7 +90,7 @@ public class Parser {
         if(op2.matches("[()]"))
             return false;
         else if(op1.equals("^") && !(op2.matches("[()]")))
-            return false;
+            return true;
         return !op2.matches("[*/]") || !op1.matches("[-+]");
     }
 
