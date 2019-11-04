@@ -62,7 +62,7 @@ public class Parser {
 
     private void findOperators() {
         for(int i = 0; i < stringTokens.length; i++) {
-            if(stringTokens[i].matches("[+*/()]")) {
+            if(stringTokens[i].matches("[+*/()^]")) {
                 ops.push(stringTokens[i]);
             } else if(stringTokens[i].equals("-")) {
                 if(!(Character.isDigit(stringTokens[i + 1].charAt(0))))
@@ -79,8 +79,9 @@ public class Parser {
             throw new IllegalStartException("The first character of the string must be a \"=\"");
         }
         for(int i = 0; i < splitCheckString.length; i++) {
-            if(!(Character.isDigit(rawString.charAt(i)) || splitCheckString[i].matches("[-+*/=()]"))) {
-                //throw new IllegalCharacterException("Illegal character \'" + splitCheckString[i] + "\' at index: " + i);
+            if(!(Character.isDigit(rawString.charAt(i)) || splitCheckString[i].matches("[-+*/=()^.]") ||
+                    splitCheckString[i].equals(" "))) {
+                throw new IllegalCharacterException("Illegal character \'" + splitCheckString[i] + "\' at index: " + i);
             }
         }
     }
@@ -88,19 +89,23 @@ public class Parser {
     private boolean hasPrecedence(String op1, String op2) {
         if(op2.matches("[()]"))
             return false;
+        else if(op1.equals("^") && !(op2.matches("[()]")))
+            return false;
         return !op2.matches("[*/]") || !op1.matches("[-+]");
     }
 
-    private double applyOperator(double a, char op, double b) throws ArithmeticException {
+    private double applyOperator(double a, String op, double b) throws ArithmeticException {
         switch(op) {
-            case '-':
+            case "-":
                 return a - b;
-            case '*':
+            case "*":
                 return a * b;
-            case '/':
+            case "/":
                 if(b == 0)
                     throw new ArithmeticException("Attempt to divide by zero, please remove 0 and please try again");
                 return a / b;
+            case "^":
+                return Math.pow(a, b);
             default:
                 return a + b;
         }
