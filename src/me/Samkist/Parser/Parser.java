@@ -28,7 +28,6 @@ public class Parser {
             return;
         }
         findNumbers();
-        findOperators();
     }
 
     private double evaluateExpression() {
@@ -50,7 +49,23 @@ public class Parser {
                     stringBuilder.append(stringTokens[i]);
                     i++;
                 }
-                s.add(stringBuilder.toString());
+                nums.push(Double.parseDouble(stringBuilder.toString()));
+            } else if(stringTokens[i].equals("(")) {
+                ops.push(stringTokens[i]);
+            } else if(stringTokens[i].equals(")")) {
+                while(!ops.peek().equals("(")) {
+                    double secondNum = nums.pop();
+                    double firstNum = nums.pop();
+                    nums.push(applyOperator(firstNum, ops.pop(), secondNum));
+                }
+                ops.pop();
+            } else if(stringTokens[i].matches("[-+*/^]")) {
+                while(!ops.empty() && hasPrecedence(stringTokens[i], ops.peek())) {
+                    double secondNum = nums.pop();
+                    double firstNum = nums.pop();
+                    nums.push(applyOperator(firstNum, ops.pop(), secondNum));
+                }
+
             }
         }
         for(String st : s) {
@@ -58,19 +73,6 @@ public class Parser {
         }
         System.out.println("Numbers: ");
         nums.forEach(System.out::println);
-    }
-
-    private void findOperators() {
-        for(int i = 0; i < stringTokens.length; i++) {
-            if(stringTokens[i].matches("[+*/()^]")) {
-                ops.push(stringTokens[i]);
-            } else if(stringTokens[i].equals("-")) {
-                if(!(Character.isDigit(stringTokens[i + 1].charAt(0))))
-                    ops.push(stringTokens[i]);
-            }
-        }
-        System.out.println("Operators: ");
-        ops.forEach(System.out::println);
     }
 
     private void errorCheck() throws IllegalStartException, IllegalCharacterException {
