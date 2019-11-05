@@ -7,11 +7,11 @@ import java.util.ArrayList;
 import java.util.Stack;
 
 public class Parser {
-    Stack<Double> nums = new Stack<>();
-    Stack<String> ops = new Stack<>();
-    String[] stringTokens;
-    String rawString;
-    ParserGUI gui;
+    private Stack<Double> nums = new Stack<>();
+    private Stack<String> ops = new Stack<>();
+    private String[] stringTokens;
+    private String rawString;
+    private ParserGUI gui;
 
     public Parser(String rawString, ParserGUI gui) {
         this.rawString = rawString;
