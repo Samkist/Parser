@@ -17,6 +17,11 @@ public class Parser {
         this.rawString = rawString;
         this.gui = gui;
         stringTokens = rawString.split("");
+        SamArray<String> stringList= new SamArray<>(stringTokens);
+        for(int i = 0; i < stringList.size(); i++) {
+            if(stringList.get(i).equals(" "))
+                stringList.remove(stringList.get(i));
+        }
         try {
             errorCheck();
         } catch (IllegalStartException e) {
@@ -51,33 +56,31 @@ public class Parser {
                 }
                 System.out.println("Pushing num: " + stringBuilder.toString());
                 nums.push(Double.parseDouble(stringBuilder.toString()));
-                nums.forEach(System.out::println);
             } else if(stringTokens[i].equals("(")) {
                 ops.push(stringTokens[i]);
             } else if(stringTokens[i].equals(")")) {
                 while(!ops.peek().equals("(")) {
-                    System.out.println("Popping nums");
+                    System.out.println("Top of operator stack is not (");
                     double secondNum = nums.pop();
                     double firstNum = nums.pop();
                     nums.push(applyOperator(firstNum, ops.pop(), secondNum));
                 }
                 ops.pop();
             } else if(stringTokens[i].matches("[-+*/^]")) {
+                //Switched ops::peek and stringTokens for args
                 while(!ops.empty() && hasPrecedence(stringTokens[i], ops.peek())) {
-                    System.out.println("Popping nums");
+                    System.out.println("Found operator " + stringTokens[i] + " has precedence over " + ops.peek());
                     double secondNum = nums.pop();
                     double firstNum = nums.pop();
                     nums.push(applyOperator(firstNum, ops.pop(), secondNum));
                 }
-
                 ops.push(stringTokens[i]);
             }
 
             while(!ops.empty() && nums.size() >= 2) {
-                System.out.println("Operating: ");
-                nums.forEach(System.out::println);
                 double secondNum = nums.pop();
                 double firstNum = nums.pop();
+                System.out.println("Operating: " + firstNum + " " + ops.peek() + " " + secondNum);
                 nums.push(applyOperator(firstNum, ops.pop(), secondNum));
             }
         }
