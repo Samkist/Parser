@@ -49,11 +49,14 @@ public class Parser {
                     stringBuilder.append(stringTokens[i]);
                     i++;
                 }
+                System.out.println("Pushing num: " + stringBuilder.toString());
                 nums.push(Double.parseDouble(stringBuilder.toString()));
+                nums.forEach(System.out::println);
             } else if(stringTokens[i].equals("(")) {
                 ops.push(stringTokens[i]);
             } else if(stringTokens[i].equals(")")) {
                 while(!ops.peek().equals("(")) {
+                    System.out.println("Popping nums");
                     double secondNum = nums.pop();
                     double firstNum = nums.pop();
                     nums.push(applyOperator(firstNum, ops.pop(), secondNum));
@@ -61,11 +64,21 @@ public class Parser {
                 ops.pop();
             } else if(stringTokens[i].matches("[-+*/^]")) {
                 while(!ops.empty() && hasPrecedence(stringTokens[i], ops.peek())) {
+                    System.out.println("Popping nums");
                     double secondNum = nums.pop();
                     double firstNum = nums.pop();
                     nums.push(applyOperator(firstNum, ops.pop(), secondNum));
                 }
 
+                ops.push(stringTokens[i]);
+            }
+
+            while(!ops.empty() && nums.size() >= 2) {
+                System.out.println("Operating: ");
+                nums.forEach(System.out::println);
+                double secondNum = nums.pop();
+                double firstNum = nums.pop();
+                nums.push(applyOperator(firstNum, ops.pop(), secondNum));
             }
         }
         for(String st : s) {
